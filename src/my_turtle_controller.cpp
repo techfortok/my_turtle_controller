@@ -26,7 +26,7 @@ void TurtleController::set_pose(turtlesim::Pose &pose, float x=0.0, float y=0.0,
 
 int TurtleController::straight()
 {
-    cmd_vel_.linear.x  = 1.0;
+    cmd_vel_.linear.x  = 2.0;
     cmd_vel_.angular.z = 0.0;
     pub_cmd_vel_.publish(cmd_vel_); // publishを実行（turtleを動かす指令）
     return 1;
@@ -35,7 +35,7 @@ int TurtleController::straight()
 int TurtleController::turn()
 {
     cmd_vel_.linear.x  = 0.0;
-    cmd_vel_.angular.z = 0.7;
+    cmd_vel_.angular.z = 1.7;
     pub_cmd_vel_.publish(cmd_vel_);
     return 2;
 }

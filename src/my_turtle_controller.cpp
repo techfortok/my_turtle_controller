@@ -35,7 +35,7 @@ int TurtleController::straight()
 int TurtleController::turn()
 {
     cmd_vel_.linear.x  = 0.0;
-    cmd_vel_.angular.z = 1.7;
+    cmd_vel_.angular.z = 0.5;
     pub_cmd_vel_.publish(cmd_vel_);
     return 2;
 }

@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <arg name="input_n" default="3"/>
-    <node pkg="my_turtle_controller" type="my_turtle_controller" name="my_turtle_controller">
-        <param name="n" value="$(arg input_n)"/>
-    </node>
-    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node"/>
-</launch>

@@ -1,44 +1,46 @@
 #ifndef TURTLESIM_CONTROLLER_H
 #define TURTLESIM_CONTROLLER_H
 
-#include <ros/ros.h>
+#include <optional>
+
 #include <geometry_msgs/Twist.h>
+#include <ros/ros.h>
 #include <turtlesim/Pose.h>
 
-class TurtleController
+struct Turtle
 {
-    public:
-        TurtleController(); // デフォルトコンストラクタ
-        void process();
-    private:
-        void pose_callback(const turtlesim::Pose::ConstPtr &msg);            // poseのコールバック関数
-        void set_pose(turtlesim::Pose &pose ,float x, float y, float theta); // poseの設定
-        void print_info(int move_command);                                   // 実行した動作と各種状態の表示
+  std::optional<turtlesim::Pose> pose;
+  double velocity;
+  double yawrate;
+};
 
-        int   straight();         // 直進
-        int   turn();             // 旋回
-        int   stop();             // 停止
-        int   move();
-        float get_theta_target(); // 目標旋回角を返す
-        bool  can_turn();         // 目標旋回角に達するまでTrueを返す
-        void  cal_distance();     // 直前の旋回地点と現在地との直線距離の算出
+class TurtlesimController
+{
+public:
+  TurtlesimController(ros::NodeHandle &nh, ros::NodeHandle &pnh);
+  void process();
 
+private:
+  void pose_callback(const turtlesim::Pose::ConstPtr &msg);
+  void set_cmd_vel();
+  void print_status();
+  bool can_move();
+  bool can_turn();
+  double calc_target_direction(const turtlesim::Pose pose, const int turn_count);
+  double calc_distance(const turtlesim::Pose pose1, const turtlesim::Pose pose2);
+  geometry_msgs::Twist get_cmd_vel_to_go_straight();
+  geometry_msgs::Twist get_cmd_vel_to_turn_in_place();
 
-        int   hz_;                // ループ周波数
-        int   n_;                 // N角形
-        int   turn_count_;        // 方向転換の回数
-        float distance_target_;   // 一辺のサイズ
-        float distance_;          // 旋回位置（初期位置）と現在位置の直線距離
-        float theta_target_base_; // 基準目標旋回角
+  int num_of_sides_ = 0;
+  int turn_count_ = 0;
+  double length_of_side_ = 0.0;
+  double turn_direction_th_ = 0.0;
 
+  Turtle turtle_;
+  std::optional<turtlesim::Pose> prev_turn_pose_;
 
-        ros::NodeHandle nh_;           // ノードハンドル
-        ros::NodeHandle private_nh_;   // プライベートノードハンドル
-        ros::Subscriber sub_pose_;     // サブスクライバ（pose）
-        ros::Publisher pub_cmd_vel_;   // パブリッシャ（速度指令）
-        geometry_msgs::Twist cmd_vel_; // 速度指令
-        turtlesim::Pose current_pose_; // 現在位置
-        turtlesim::Pose old_pose_;     // 直前の旋回位置（初期位置）
+  ros::Subscriber pose_sub_;
+  ros::Publisher cmd_vel_pub_;
 };
 
 #endif

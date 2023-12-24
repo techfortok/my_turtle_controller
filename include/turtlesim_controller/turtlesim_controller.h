@@ -1,5 +1,5 @@
-#ifndef MY_TURTLE_CONTROLLER_H
-#define MY_TURTLE_CONTROLLER_H
+#ifndef TURTLESIM_CONTROLLER_H
+#define TURTLESIM_CONTROLLER_H
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>

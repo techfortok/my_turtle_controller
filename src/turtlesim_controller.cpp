@@ -10,6 +10,8 @@ TurtlesimController::TurtlesimController(ros::NodeHandle &nh, ros::NodeHandle &p
 
   cmd_vel_pub_ = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 1);
   pose_sub_ = nh.subscribe("/turtle1/pose", 1, &TurtlesimController::pose_callback, this);
+
+  ros::spin();
 }
 
 void TurtlesimController::pose_callback(const turtlesim::Pose::ConstPtr &msg)
@@ -17,8 +19,6 @@ void TurtlesimController::pose_callback(const turtlesim::Pose::ConstPtr &msg)
   turtle_.pose = *msg;
   set_cmd_vel();
 }
-
-void TurtlesimController::process() { ros::spin(); }
 
 void TurtlesimController::set_cmd_vel()
 {

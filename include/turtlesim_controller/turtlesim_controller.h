@@ -18,7 +18,6 @@ class TurtlesimController
 {
 public:
   TurtlesimController(ros::NodeHandle &nh, ros::NodeHandle &pnh);
-  void process();
 
 private:
   void pose_callback(const turtlesim::Pose::ConstPtr &msg);

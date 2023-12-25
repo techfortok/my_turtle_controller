@@ -6,7 +6,6 @@ int main(int argc, char *argv[])
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   TurtlesimController turtlesim_controller(nh, pnh);
-  turtlesim_controller.process();
 
   return 0;
 }

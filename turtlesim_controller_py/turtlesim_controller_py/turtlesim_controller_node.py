@@ -2,7 +2,7 @@
 
 import rclpy
 
-from turtlesim_controller import TurtlesimController
+from turtlesim_controller_py.turtlesim_controller import TurtlesimController
 
 def main(args=None) -> None:
     rclpy.init(args=args)

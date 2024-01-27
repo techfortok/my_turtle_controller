@@ -43,17 +43,17 @@ class TurtlesimController(Node):
         self._cmd_vel_pub: rclpy.Publisher = self.create_publisher(Twist, "/turtle1/cmd_vel", 1)
         self._pose_sub: rclpy.Subscriber= self.create_subscription(Pose, "/turtle1/pose", self._pose_callback, 1)
 
-        rclpy.get_logger().info("turtlesim_controller has been initialized.")
-        rclpy.get_logger().info("Node name: %s" % self.get_name())
-        rclpy.get_logger().info("num_of_sides: %d" % self._param.num_of_sides)
-        rclpy.get_logger().info("length_of_side: %s" % self._param.length_of_side)
-        rclpy.get_logger().info("turn_direction_th: %s" % self._param.turn_direction_th)
-        rclpy.get_logger().info("velocity: %s" % self._turtle.velocity)
-        rclpy.get_logger().info("yawrate: %s" % self._turtle.yawrate)
+        self.get_logger().info("turtlesim_controller has been initialized.")
+        self.get_logger().info("Node name: %s" % self.get_name())
+        self.get_logger().info("num_of_sides: %d" % self._param.num_of_sides)
+        self.get_logger().info("length_of_side: %s" % self._param.length_of_side)
+        self.get_logger().info("turn_direction_th: %s" % self._param.turn_direction_th)
+        self.get_logger().info("velocity: %s" % self._turtle.velocity)
+        self.get_logger().info("yawrate: %s" % self._turtle.yawrate)
 
     def _pose_callback(self, msg: Pose) -> None:
         self._turtle.pose = msg
-        # self._set_cmd_vel()
+        self._set_cmd_vel()
 
     def _set_cmd_vel(self) -> None:
         cmd_vel: Twist = Twist()
@@ -62,17 +62,17 @@ class TurtlesimController(Node):
             return None
 
         if self._prev_turn_pose is None:
-            rclpy.get_logger().warn("prev_turn_pose is None")
+            self.get_logger().warn("prev_turn_pose is None")
             self._prev_turn_pose = self._turtle.pose
         distance: float = self._calc_distance(self._prev_turn_pose, self._turtle.pose)
 
         # go straight or turn
         if distance < self._param.length_of_side:
-            rclpy.get_logger().info("distance from last turning position: %f" % self._param.length_of_side - distance)
+            self.get_logger().info("distance from last turning position: %f" % float(self._param.length_of_side - distance))
             cmd_vel = self._get_cmd_vel_to_go_straight()
         else:
             if self._can_turn():
-                rclpy.get_logger().info("diff from target direction: %f" % \
+                self.get_logger().info("diff from target direction: %f" % \
                     abs(self._calc_target_direction(self._turtle.pose, self._turn_count) - self._turtle.pose.theta))
                 cmd_vel = self._get_cmd_vel_to_turn_in_place()
             else:

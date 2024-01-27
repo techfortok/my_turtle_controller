@@ -1,31 +1,41 @@
-#include "turtlesim_controller/turtlesim_controller.h"
+#include <chrono>
+#include <functional>
+#include <memory>
 
-TurtlesimController::TurtlesimController(ros::NodeHandle &nh, ros::NodeHandle &pnh)
+#include <rclcpp/rclcpp.hpp>
+
+#include "turtlesim_controller/turtlesim_controller.hpp"
+
+using namespace std::chrono_literals;
+
+TurtlesimController::TurtlesimController() : Node("turtlesim_controller")
 {
-  pnh.param<int>("num_of_sides", num_of_sides_, 3);
-  pnh.param<double>("length_of_side", length_of_side_, 1.0);
-  pnh.param<double>("turn_direction_th", turn_direction_th_, 0.01);
-  pnh.param<double>("velocity", turtle_.velocity, 0.5);
-  pnh.param<double>("yawrate", turtle_.yawrate, 0.3);
+  num_of_sides_ = this->declare_parameter<int>("num_of_sides", 3);
+  length_of_side_ = this->declare_parameter<double>("length_of_side", 1.0);
+  turn_direction_th_ = this->declare_parameter<double>("turn_direction_th", 0.01);
+  turtle_.velocity = this->declare_parameter<double>("velocity", 0.5);
+  turtle_.yawrate = this->declare_parameter<double>("yawrate", 0.3);
 
-  cmd_vel_pub_ = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 1);
-  pose_sub_ = nh.subscribe("/turtle1/pose", 1, &TurtlesimController::pose_callback, this);
+  RCLCPP_INFO(this->get_logger(), "turtle controller started");
+  cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+    "/turtle1/cmd_vel", rclcpp::QoS(1).reliable());
+  pose_sub_ = this->create_subscription<turtlesim::msg::Pose>(
+    "/turtle1/pose", rclcpp::QoS(1).reliable(),
+    std::bind(&TurtlesimController::pose_callback, this, std::placeholders::_1));
 }
 
-void TurtlesimController::pose_callback(const turtlesim::Pose::ConstPtr &msg)
+void TurtlesimController::pose_callback(const turtlesim::msg::Pose::SharedPtr msg)
 {
   turtle_.pose = *msg;
   set_cmd_vel();
 }
 
-void TurtlesimController::process() { ros::spin(); }
-
 void TurtlesimController::set_cmd_vel()
 {
-  geometry_msgs::Twist cmd_vel;
+  geometry_msgs::msg::Twist cmd_vel;
   if (!can_move())
   {
-    cmd_vel_pub_.publish(cmd_vel);
+    cmd_vel_pub_->publish(cmd_vel);
     return;
   }
 
@@ -52,27 +62,27 @@ void TurtlesimController::set_cmd_vel()
   }
 
   print_status();
-  cmd_vel_pub_.publish(cmd_vel);
+  cmd_vel_pub_->publish(cmd_vel);
 }
 
 bool TurtlesimController::can_move() { return turtle_.pose.has_value() && turn_count_ < num_of_sides_; }
 
-double TurtlesimController::calc_distance(const turtlesim::Pose pose1, const turtlesim::Pose pose2)
+double TurtlesimController::calc_distance(const turtlesim::msg::Pose pose1, const turtlesim::msg::Pose pose2)
 {
   return hypot(pose1.x - pose2.x, pose1.y - pose2.y);
 }
 
-geometry_msgs::Twist TurtlesimController::get_cmd_vel_to_go_straight()
+geometry_msgs::msg::Twist TurtlesimController::get_cmd_vel_to_go_straight()
 {
-  geometry_msgs::Twist cmd_vel;
+  geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.linear.x = turtle_.velocity;
 
   return cmd_vel;
 }
 
-geometry_msgs::Twist TurtlesimController::get_cmd_vel_to_turn_in_place()
+geometry_msgs::msg::Twist TurtlesimController::get_cmd_vel_to_turn_in_place()
 {
-  geometry_msgs::Twist cmd_vel;
+  geometry_msgs::msg::Twist cmd_vel;
   cmd_vel.angular.z = turtle_.yawrate;
 
   return cmd_vel;
@@ -85,7 +95,7 @@ bool TurtlesimController::can_turn()
          turn_count_ < num_of_sides_ - 1;
 }
 
-double TurtlesimController::calc_target_direction(const turtlesim::Pose pose, const int turn_count)
+double TurtlesimController::calc_target_direction(const turtlesim::msg::Pose pose, const int turn_count)
 {
   const double target_direction_base = 2.0 * M_PI / num_of_sides_;
   double target_direction = target_direction_base * (turn_count_ + 1);
@@ -99,22 +109,32 @@ void TurtlesimController::print_status()
 {
   if (!turtle_.pose.has_value())
   {
-    ROS_WARN_STREAM("turtle_.pose.has_value: " << turtle_.pose.has_value());
+    RCLCPP_WARN_STREAM(this->get_logger(), "turtle_.pose.has_value: " << turtle_.pose.has_value());
     return;
   }
   if (!prev_turn_pose_.has_value())
   {
-    ROS_WARN_STREAM("prev_turn_pose_.has_value: " << prev_turn_pose_.has_value());
+    RCLCPP_WARN_STREAM(this->get_logger(), "prev_turn_pose_.has_value: " << prev_turn_pose_.has_value());
     return;
   }
 
-  ROS_INFO(" ");
-  ROS_INFO("---");
-  ROS_INFO_STREAM("current_pose: " << turtle_.pose.value());
-  ROS_INFO_STREAM("prev_turn_pose: " << prev_turn_pose_.value());
-  ROS_INFO_STREAM(
+  RCLCPP_INFO(this->get_logger(), " ");
+  RCLCPP_INFO(this->get_logger(), "---");
+  RCLCPP_INFO(this->get_logger(), "current_pose:");
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tx: " << turtle_.pose.value().x);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\ty: " << turtle_.pose.value().y);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\ttheta: " << turtle_.pose.value().theta);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tlinear_velocity: " << turtle_.pose.value().linear_velocity);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tangular_velocity: " << turtle_.pose.value().angular_velocity);
+  RCLCPP_INFO(this->get_logger(), "prev_turn_pose:");
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tx: " << prev_turn_pose_.value().x);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\ty: " << prev_turn_pose_.value().y);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\ttheta: " << prev_turn_pose_.value().theta);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tlinear_velocity: " << prev_turn_pose_.value().linear_velocity);
+  RCLCPP_INFO_STREAM(this->get_logger(), "\tangular_velocity: " << prev_turn_pose_.value().angular_velocity);
+  RCLCPP_INFO_STREAM(this->get_logger(),
       "distance from last turning position: " << calc_distance(turtle_.pose.value(), prev_turn_pose_.value()));
-  ROS_INFO_STREAM(
+  RCLCPP_INFO_STREAM(this->get_logger(),
       "diff from target direction: " << abs(
           calc_target_direction(turtle_.pose.value(), turn_count_) - turtle_.pose.value().theta));
 }

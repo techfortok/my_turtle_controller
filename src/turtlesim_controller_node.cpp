@@ -1,12 +1,12 @@
-#include "turtlesim_controller/turtlesim_controller.h"
+#include <rclcpp/rclcpp.hpp>
+
+#include "turtlesim_controller/turtlesim_controller.hpp"
 
 int main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "turtlesim_controller");
-  ros::NodeHandle nh;
-  ros::NodeHandle pnh("~");
-  TurtlesimController turtlesim_controller(nh, pnh);
-  turtlesim_controller.process();
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<TurtlesimController>());
+  rclcpp::shutdown();
 
   return 0;
 }

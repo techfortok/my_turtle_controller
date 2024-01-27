@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import math
 from typing import Optional
 
-import rospy
+import rclpy
+from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 
@@ -20,37 +21,39 @@ class Turtle:
     velocity: float
     yawrate: float
 
-class TurtlesimController:
+class TurtlesimController(Node):
+
     def __init__(self) -> None:
-        rospy.init_node("turtlesim_controller")
+        super().__init__("turtlesim_controller")
 
         self._param: Param = Param(
-                rospy.get_param("~num_of_sides", 3),
-                rospy.get_param("~length_of_side", 1.0),
-                rospy.get_param("~turn_direction_th", 0.01),
+                self.declare_parameter("num_of_sides", 3).value,
+                self.declare_parameter("length_of_side", 1.0).value,
+                self.declare_parameter("turn_direction_th", 0.01).value,
                 )
         self._turtle: Turtle = Turtle(
                 None,
-                rospy.get_param("~velocity", 0.5),
-                rospy.get_param("~yawrate", 0.3)
+                self.declare_parameter("velocity", 0.5).value,
+                self.declare_parameter("yawrate", 0.3).value,
                 )
 
         self._prev_turn_pose: Optional[Pose] = None
         self._turn_count: int = 0
 
-        self._cmd_vel_pub: rospy.Publisher = rospy.Publisher("/turtle1/cmd_vel", Twist, queue_size=1)
-        self._pose_sub: rospy.Subscriber = rospy.Subscriber("/turtle1/pose", Pose, self._pose_callback, queue_size=1)
+        self._cmd_vel_pub: rclpy.Publisher = self.create_publisher(Twist, "/turtle1/cmd_vel", 1)
+        self._pose_sub: rclpy.Subscriber= self.create_subscription(Pose, "/turtle1/pose", self._pose_callback, 1)
 
-        rospy.loginfo("Node name: %s", rospy.get_name())
-        rospy.loginfo("num_of_sides: %d", self._param.num_of_sides)
-        rospy.loginfo("length_of_side: %s", self._param.length_of_side)
-        rospy.loginfo("turn_direction_th: %s", self._param.turn_direction_th)
-        rospy.loginfo("velocity: %s", self._turtle.velocity)
-        rospy.loginfo("yawrate: %s", self._turtle.yawrate)
+        rclpy.get_logger().info("turtlesim_controller has been initialized.")
+        rclpy.get_logger().info("Node name: %s" % self.get_name())
+        rclpy.get_logger().info("num_of_sides: %d" % self._param.num_of_sides)
+        rclpy.get_logger().info("length_of_side: %s" % self._param.length_of_side)
+        rclpy.get_logger().info("turn_direction_th: %s" % self._param.turn_direction_th)
+        rclpy.get_logger().info("velocity: %s" % self._turtle.velocity)
+        rclpy.get_logger().info("yawrate: %s" % self._turtle.yawrate)
 
     def _pose_callback(self, msg: Pose) -> None:
         self._turtle.pose = msg
-        self._set_cmd_vel()
+        # self._set_cmd_vel()
 
     def _set_cmd_vel(self) -> None:
         cmd_vel: Twist = Twist()
@@ -59,17 +62,17 @@ class TurtlesimController:
             return None
 
         if self._prev_turn_pose is None:
-            rospy.logwarn("prev_turn_pose is None")
+            rclpy.get_logger().warn("prev_turn_pose is None")
             self._prev_turn_pose = self._turtle.pose
         distance: float = self._calc_distance(self._prev_turn_pose, self._turtle.pose)
 
         # go straight or turn
         if distance < self._param.length_of_side:
-            rospy.loginfo("distance from last turning position: %f", self._param.length_of_side - distance)
+            rclpy.get_logger().info("distance from last turning position: %f" % self._param.length_of_side - distance)
             cmd_vel = self._get_cmd_vel_to_go_straight()
         else:
             if self._can_turn():
-                rospy.loginfo("diff from target direction: %f", \
+                rclpy.get_logger().info("diff from target direction: %f" % \
                     abs(self._calc_target_direction(self._turtle.pose, self._turn_count) - self._turtle.pose.theta))
                 cmd_vel = self._get_cmd_vel_to_turn_in_place()
             else:
@@ -108,6 +111,3 @@ class TurtlesimController:
             target_direction -= 2.0 * math.pi
 
         return target_direction
-
-    def process(self) -> None:
-        rospy.spin()

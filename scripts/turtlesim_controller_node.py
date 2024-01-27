@@ -1,19 +1,18 @@
 #!/usr/bin/python3
 
-import rospy
+import rclpy
 
 from turtlesim_controller import TurtlesimController
 
-
-def main() -> None:
+def main(args=None) -> None:
+    rclpy.init(args=args)
 
     turtlesim_controller = TurtlesimController()
 
-    try:
-        turtlesim_controller.process()
-    except rospy.ROSInterruptException:
-        pass
+    rclpy.spin(turtlesim_controller)
 
+    turtlesim_controller.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

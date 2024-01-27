@@ -1,23 +1,18 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(turtlesim_controller)
 
-add_compile_options(-std=c++17 -O2 -g)
-
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  geometry_msgs
-  turtlesim
+# find dependencies
+find_package(ament_cmake_auto REQUIRED)
+# package.xmlのdependをチェックして自動的にfind_packageしてくれる
+ament_auto_find_build_dependencies()
+# 実行ファイルを作成する
+ament_auto_add_executable(${PROJECT_NAME}_node
+  src/turtlesim_controller.cpp
+  src/turtlesim_controller_node.cpp)
+# launchファイルをインストール（ament_package_indexが探せる場所に置く）
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
 )
-
-catkin_package()
-
-include_directories(include ${catkin_INCLUDE_DIRS})
-
-add_library(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
-
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_node
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
+# ヘッダーのインストールや共有ライブラリのエクスポート等を自動で行ってくれる
+ament_auto_package()

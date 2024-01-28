@@ -3,9 +3,7 @@
   <name>turtlesim_controller</name>
   <version>0.0.0</version>
   <description>The turtlesim_controller package</description>
-
   <maintainer email="tnakamura.amsl@gmail.com">Toshiki Nakamura</maintainer>
-
   <license>TODO</license>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
